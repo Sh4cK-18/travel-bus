@@ -1,63 +1,67 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Usuario, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { RegisterAccessDto } from './dto/register-access.dto';
-
-/**
- * Creates a new user with the provided data.
- * @param data - The registration data for the user.
- * @returns A promise that resolves to the created user.
- * @throws BadRequestException if the email is already in use or if the provided role does not exist.
- **/
+import { LoginAccessDto } from './dto/login-access.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
-  async createUser(data: RegisterAccessDto): Promise<Usuario> {
+  /**
+   * Creates a new user with the provided data.
+   * @param data - The registration data for the user.
+   * @returns A promise that resolves to the created user.
+   * @throws BadRequestException if the email is already in use or if the provided role does not exist.
+   **/
+
+  async createUser({nombre, apellido, email, password, roles}: RegisterAccessDto){
     const user = await this.prisma.usuario.findUnique({
       where: {
-        email: data.email,
+        email: email,
       },
     });
     if (user) {
       throw new BadRequestException('El correo electronico ya esta en uso');
     }
 
-    let roles = [];
-    if (!data.roles) {
+    let rolesArray = [];
+    if (!roles) {
       const defaultRole = await this.prisma.rol.findFirst({
         where: {
           name: 'USUARIO',
         },
       });
-      roles.push(defaultRole);
+      rolesArray.push(defaultRole);
     } else {
       const provideRole = await this.prisma.rol.findMany({
         where: {
           name: {
-            in: data.roles,
+            in: roles,
           },
         },
       });
       if (provideRole) {
-        roles.push(...provideRole);
+        rolesArray.push(...provideRole);
       } else {
         throw new BadRequestException('El rol no existe');
       }
     }
 
-    const hashPassword = await bcrypt.hash(data.password, 10);
+    const hashPassword = await bcrypt.hash(password, 10);
 
     return this.prisma.usuario.create({
       data: {
-        nombre: data.nombre,
-        apellido: data.apellido,
-        email: data.email,
+        nombre: nombre,
+        apellido: apellido,
+        email: email,
         password: hashPassword,
         roles: {
-          create: roles.map((role) => ({
+          create: rolesArray.map((role) => ({
             rol: {
               connect: {
                 name: role.name,
@@ -67,5 +71,53 @@ export class AuthService {
         },
       },
     });
+  }
+
+  /**
+   * Validates the user credentials and returns the user data with a JWT token.
+   * @param data - The login data for the user.
+   * @returns A promise that resolves to the user data with a JWT token.
+   * @throws BadRequestException if the credentials are invalid.
+   **/
+
+  async validateUser({ email, password }: LoginAccessDto) {
+    const user = await this.prisma.usuario.findUnique({
+      where: {
+        email: email,
+      },
+      include: {
+        roles: {
+          select: {
+            rol: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Credenciales Invalidas');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Credenciales Invalidas');
+    }
+
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      roles: user.roles.map((role) => role.rol.name),
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return {
+      ...user,
+      token,
+    };
   }
 }
