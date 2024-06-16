@@ -39,17 +39,5 @@ export class AuthController {
   async login(@Body() data: LoginAccessDto): Promise<{ token: string }> {
     return this.authService.validateUser(data);
   }
-
-   /**
-   * Close the user session.
-   * @param req - The request object.
-   * @returns A message indicating that the session has been successfully closed.
-   */
-  @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  async logout (@Req() req: Request){
-    req.headers.authorization.split(' ')[1];
-    return {message: 'Sesion cerrada exitosamente'}
-  }
   
 }
