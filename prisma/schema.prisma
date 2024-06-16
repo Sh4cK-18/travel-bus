@@ -45,3 +45,4 @@ model UserRol {
 
   @@unique([userId, roleId])
 }
+

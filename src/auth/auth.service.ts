@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterAccessDto } from './dto/register-access.dto';
@@ -77,7 +77,7 @@ export class AuthService {
    * Validates the user credentials and returns the user data with a JWT token.
    * @param data - The login data for the user.
    * @returns A promise that resolves to the user data with a JWT token.
-   * @throws BadRequestException if the credentials are invalid.
+   * @throws UnauthorizedExceptioif the credentials are invalid.
    **/
 
   async validateUser({ email, password }: LoginAccessDto) {
@@ -99,12 +99,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new BadRequestException('Credenciales Invalidas');
+      throw new UnauthorizedException('Credenciales Invalidas');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new BadRequestException('Credenciales Invalidas');
+      throw new UnauthorizedException('Credenciales Invalidas');
     }
 
     const payload = {
@@ -120,4 +120,5 @@ export class AuthService {
       token,
     };
   }
+
 }
