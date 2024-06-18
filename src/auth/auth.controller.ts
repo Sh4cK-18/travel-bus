@@ -3,12 +3,14 @@ import {
   Controller,
   Post,
   UsePipes,
+  Res,
   ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAccessDto } from './dto/register-access.dto';
 import { LoginAccessDto } from './dto/login-access.dto';
 import { Usuario as UsuarioModel } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -25,15 +27,30 @@ export class AuthController {
     return this.authService.createUser(data);
   }
 
-  /**
-   * Authenticates a user and returns a token.
+   /**
+   * Sign in a user.
+   *
    * @param data - The login access data.
-   * @returns A promise that resolves to an object containing the token.
+   * @param res - The response object.
+   * @returns The JSON response containing the result.
    */
   @Post('signin')
   @UsePipes(new ValidationPipe())
-  async login(@Body() data: LoginAccessDto): Promise<{ token: string }> {
-    return this.authService.validateUser(data);
+  async signin(@Body() data: LoginAccessDto, @Res() res: Response) {
+    const result = await this.authService.validateUser(data, res);
+    return res.json(result);
   }
-  
+
+/**
+   * Close user session.
+   * @param res - The response object.
+   * @returns A promise that resolves to the result of closing the user's session.
+   */
+ @Post('logout')
+  async logout(@Res() res: Response) {
+    return this.authService.closeSession(res);
+  }
 }
+  
+
+

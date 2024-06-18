@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterAccessDto } from './dto/register-access.dto';
@@ -80,7 +81,7 @@ export class AuthService {
    * @throws UnauthorizedExceptioif the credentials are invalid.
    **/
 
-  async validateUser({ email, password }: LoginAccessDto) {
+  async validateUser({ email, password }: LoginAccessDto, res: Response) {
     const user = await this.prisma.usuario.findUnique({
       where: {
         email: email,
@@ -115,10 +116,33 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 3600000,
+    });
+
     return {
       ...user,
       token,
     };
   }
+
+  /**
+   * Closes the user session by clearing the token cookie.
+   * 
+   * @param res - The response object used to send the HTTP response.
+   * @returns A promise that resolves to the HTTP response with a success message if the logout is successful,
+   * or an error message if the logout fails.
+   */
+  async closeSession(res: Response) {
+    try {
+      res.clearCookie('token');
+      return res.status(200).send({ message: 'Logout success' });
+    } catch (error) {
+      return res.status(500).send({ message: 'Logout failed', error });
+    }
+  }  
 
 }
