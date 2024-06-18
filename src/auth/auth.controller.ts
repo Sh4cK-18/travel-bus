@@ -2,17 +2,13 @@ import {
   Body,
   Controller,
   Post,
-  Req,
   UsePipes,
   ValidationPipe,
-  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAccessDto } from './dto/register-access.dto';
 import { LoginAccessDto } from './dto/login-access.dto';
 import { Usuario as UsuarioModel } from '@prisma/client';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {

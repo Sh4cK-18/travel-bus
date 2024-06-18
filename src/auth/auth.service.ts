@@ -26,7 +26,7 @@ export class AuthService {
       },
     });
     if (user) {
-      throw new BadRequestException('El correo electronico ya esta en uso');
+      throw new BadRequestException('email already in use');
     }
 
     let rolesArray = [];
@@ -48,7 +48,7 @@ export class AuthService {
       if (provideRole) {
         rolesArray.push(...provideRole);
       } else {
-        throw new BadRequestException('El rol no existe');
+        throw new BadRequestException('Role does not exist');
       }
     }
 
@@ -99,12 +99,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Credenciales Invalidas');
+      throw new UnauthorizedException('Invalid Credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales Invalidas');
+      throw new UnauthorizedException('Invalid Credentials');
     }
 
     const payload = {
