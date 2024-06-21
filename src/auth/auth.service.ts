@@ -62,13 +62,24 @@ export class AuthService {
         email: email,
         password: hashPassword,
         roles: {
-          create: rolesArray.map((role) => ({
+          create: roles.map((role) => ({
             rol: {
               connect: {
-                name: role.name,
+                name: role,
               },
             },
           })),
+        },
+      },
+      include: {
+        roles: {
+          select: {
+            rol: {
+              select: {
+                name: true,
+              },
+            },
+          },
         },
       },
     });
@@ -110,7 +121,7 @@ export class AuthService {
 
     const payload = {
       email: user.email,
-      sub: user.id,
+      sub: user.usuarioId,
       roles: user.roles.map((role) => role.rol.name),
     };
 
