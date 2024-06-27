@@ -47,6 +47,9 @@ export class RutaService {
   async getRoutes() {
     try {
       const data = await this.prisma.ruta.findMany();
+      if(!data) {
+        return { message: 'No Existen rutas' };
+      }
       return { message: 'Rutas encontradas', data };
     } catch (error) {
       return { message: 'Error al buscar las rutas' };
@@ -63,6 +66,9 @@ export class RutaService {
       const data = await this.prisma.ruta.findUnique({
         where: { rutaId: Number(id) },
       });
+      if (!data) {
+        return { message: 'Ruta no encontrada' };
+      }
       return { message: 'Ruta encontrada', data };
     } catch (error) {
       return { message: 'Error al buscar la ruta' };
