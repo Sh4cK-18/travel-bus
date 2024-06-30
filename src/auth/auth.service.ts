@@ -127,18 +127,66 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 3600000,
-    });
-
     return {
       ...user,
       token,
     };
   }
+
+   /**
+   * Validates the user credentials and returns the user data with a JWT token.
+   * @param data - The login data for the Admin.
+   * @returns A promise that resolves to the user data with a JWT token.
+   * @throws UnauthorizedExceptioif the credentials are invalid.
+   **/
+  async validateAdmin({ email, password }: LoginAccessDto, res: Response) {
+    const user = await this.prisma.usuario.findFirst({
+      where: {
+        email: email,
+        roles: {
+          some: {
+            rol: {
+              name: 'ADMINISTRADOR',
+            },
+          },
+        },
+      },
+      include: {
+        roles: {
+          select: {
+            rol: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid Credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid Credentials');
+    }
+
+    const payload = {
+      email: user.email,
+      sub: user.usuarioId,
+      roles: user.roles.map((role) => role.rol.name),
+    };
+
+    const token = this.jwtService.sign(payload); 
+
+    return {
+      ...user,
+      token, 
+    };
+  }
+
 
   /**
    * Closes the user session by clearing the token cookie.

@@ -5,12 +5,17 @@ import {
   UsePipes,
   Res,
   ValidationPipe,
+  UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAccessDto } from './dto/register-access.dto';
 import { LoginAccessDto } from './dto/login-access.dto';
 import { Usuario as UsuarioModel } from '@prisma/client';
 import { Response } from 'express';
+import { RolesGuard } from './guard/roles.guard';
+
+
 
 @Controller('auth')
 export class AuthController {
@@ -34,11 +39,41 @@ export class AuthController {
    * @param res - The response object.
    * @returns The JSON response containing the result.
    */
-  @Post('signin')
+   @Post('signin')
+   @UsePipes(new ValidationPipe())
+   async signin(@Body() data: LoginAccessDto, @Res() res: Response) {
+     try {
+       const result = await this.authService.validateUser(data, res);
+       res.cookie('token', result.token, {
+         httpOnly: true,
+         secure: true,
+         sameSite: 'none',
+         maxAge: 3600000,
+       });
+ 
+       return res.json(result); 
+     } catch (error) {
+       console.error(error);
+       throw new UnauthorizedException();
+     }
+   }
+
+  @Post('admin-auth')
+  @UseGuards(RolesGuard)
   @UsePipes(new ValidationPipe())
-  async signin(@Body() data: LoginAccessDto, @Res() res: Response) {
-    const result = await this.authService.validateUser(data, res);
-    return res.json(result);
+  async adminAuth(@Body() data: LoginAccessDto, @Res() res: Response) {
+    try {
+      const result = await this.authService.validateAdmin(data, res);
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 3600000,
+      });
+      return res.json(result);
+    } catch (error) {
+      throw new UnauthorizedException('You are not authorized to access this resource.');
+    }
   }
 
 /**
