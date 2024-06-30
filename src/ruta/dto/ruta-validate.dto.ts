@@ -19,15 +19,15 @@ export class RutaValidateDto {
     @IsNotEmpty()
     puerta: string
 
-    @IsDecimal()
+    @IsDecimal({force_decimal: true, decimal_digits: '1,2'})
     @IsNotEmpty()
     precio_adulto: number
 
-    @IsDecimal()
+    @IsDecimal({force_decimal: true, decimal_digits: '1,2'})
     @IsNotEmpty()
     precio_nino: number
 
-    @IsDecimal()
+    @IsDecimal({force_decimal: true, decimal_digits: '1,2'})
     @IsNotEmpty()
     precio_tercera_edad: number
 
