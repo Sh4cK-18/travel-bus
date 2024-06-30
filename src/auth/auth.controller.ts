@@ -5,7 +5,6 @@ import {
   UsePipes,
   Res,
   ValidationPipe,
-  UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -13,7 +12,6 @@ import { RegisterAccessDto } from './dto/register-access.dto';
 import { LoginAccessDto } from './dto/login-access.dto';
 import { Usuario as UsuarioModel } from '@prisma/client';
 import { Response } from 'express';
-import { RolesGuard } from './guard/roles.guard';
 
 
 
@@ -59,7 +57,6 @@ export class AuthController {
    }
 
   @Post('admin-auth')
-  @UseGuards(RolesGuard)
   @UsePipes(new ValidationPipe())
   async adminAuth(@Body() data: LoginAccessDto, @Res() res: Response) {
     try {
