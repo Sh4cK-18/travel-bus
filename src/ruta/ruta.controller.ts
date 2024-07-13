@@ -8,6 +8,7 @@ import {
   Body,
   Get,
   Param,
+  Query,
 } from '@nestjs/common';
 import { RutaService } from './ruta.service';
 import { RutaValidateDto } from './dto/ruta-validate.dto';
@@ -38,8 +39,14 @@ export class RutaController {
     return this.rutaService.updateRoute(id, data);
   }
 
-    @Delete('delete-route/:id')
-    async deleteRoute(@Param('id') id: string) {
-        return this.rutaService.deleteRoute(id);
-    }
+  @Delete('delete-route/:id')
+  async deleteRoute(@Param('id') id: string) {
+    return this.rutaService.deleteRoute(id);
+  }
+
+  @Get('find-routes')
+  @UsePipes(new ValidationPipe())
+  async findRoutes(@Query('salida') salida: string, @Query('llegada') llegada: string) {
+    return this.rutaService.findRouteByOriginAndDestination(salida, llegada);
+  }
 }

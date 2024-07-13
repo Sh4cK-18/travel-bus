@@ -5,6 +5,9 @@ import { response } from 'express';
 
 @Injectable()
 export class RutaService {
+  findRoutes(salida: string, llegada: string) {
+    throw new Error('Method not implemented.');
+  }
   constructor(private prisma: PrismaService) {}
 
   /**
@@ -20,7 +23,6 @@ export class RutaService {
     precio_adulto,
     precio_nino,
     precio_tercera_edad,
-    cantidad_boletos,
   }: RutaValidateDto) {
     try {
       const data = await this.prisma.ruta.create({
@@ -32,7 +34,7 @@ export class RutaService {
           precio_adulto,
           precio_nino,
           precio_tercera_edad,
-          cantidad_boletos,
+          cantidad_boletos: 30
         },
       });
       if (!data) {
@@ -114,9 +116,10 @@ export class RutaService {
           HttpStatus.NOT_FOUND,
         );
       }
+      const { cantidad_boletos, ...updateData } = data;
       const updatedRoute = await this.prisma.ruta.update({
         where: { rutaId: Number(id) },
-        data: { ...data },
+        data: { ...updateData },
       });
       return { message: 'Route updated successfully', data: updatedRoute };
     } catch (error) {
@@ -148,6 +151,33 @@ export class RutaService {
       return { message: 'Route deleted successfully' };
     } catch (error) {
       return { message: 'Error deleting route', error };
+    }
+  }
+
+  async findRouteByOriginAndDestination(origin: string, destination: string) {
+    try {
+      const data = await this.prisma.ruta.findMany({
+        where: {
+          salida: origin,
+          llegada: destination,
+        },
+        select: {
+          rutaId: true,
+          puerta: true,
+          fecha_hora: true,
+        }
+      });
+      if (!data || data.length === 0) {
+        throw new HttpException(
+          {
+            messageError: 'Route not found',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      return { message: 'Route found', data };
+    } catch (error) {
+      return { message: 'Error fetching route', error };
     }
   }
 }
