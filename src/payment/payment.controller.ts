@@ -18,5 +18,11 @@ export class PaymentController {
     return this.paymentService.capturePayment(orderId, compraId);
   }
 
+  @Post('validate-qr')
+  async validateQR(@Body() body: { qrCode: string }) {
+    const { qrCode } = body;
+    return this.paymentService.validateQR(qrCode);
+}
+
 
 }

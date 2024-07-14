@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Compra` ADD COLUMN `qrCodeStatus` ENUM('ACTIVE', 'USED', 'INVALID') NOT NULL DEFAULT 'ACTIVE';

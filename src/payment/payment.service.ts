@@ -85,6 +85,7 @@ export class PaymentService {
                             },
                         },
                         qrCode: qrCodeUrl,
+                        qrCodeStatus: 'ACTIVE',
                     },
                 });
         
@@ -100,5 +101,34 @@ export class PaymentService {
             throw new HttpException('Error capturing payment', HttpStatus.BAD_REQUEST);
         }
     }
+
+    async validateQR (qrCode: string) {
+        const compra = await this.prisma.compra.findFirst({
+            where: {
+                qrCode: qrCode, qrCodeStatus: 'ACTIVE'
+            }
+        });
+
+        if (!compra) {
+            throw new HttpException(
+              {
+                messageError: 'QR Code not found',
+              },
+              HttpStatus.NOT_FOUND
+            );
+          }
+
+          await this.prisma.compra.update({
+                where: {
+                    compraId: compra.compraId
+                },
+                data: {
+                    qrCodeStatus: 'USED'
+                }
+          });
+
+          return {message: 'QR Code validated successfully and now marked as used'};
+    }
+    
     
 }

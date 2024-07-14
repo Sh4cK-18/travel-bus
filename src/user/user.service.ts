@@ -1,6 +1,8 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+import { bucket } from 'src/firebase.config';
 
 @Injectable()
 export class UserService {
@@ -14,6 +16,7 @@ export class UserService {
                     nombre: true,
                     apellido: true,
                     email: true,
+                    profilePicture: true,
                     createdAt: true,
                     updatedAt: true,
                     roles: {
@@ -52,6 +55,7 @@ export class UserService {
                     nombre: true,
                     apellido: true,
                     email: true,
+                    profilePicture: true,
                     createdAt: true,
                     updatedAt: true,
                     roles: {
@@ -150,6 +154,80 @@ export class UserService {
             throw new HttpException(
                 {
                     messageError: 'Error updating user',
+                    error: error.message,
+                },
+                HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    async updateProfilePicture(id: string, file: Express.Multer.File) {
+        try {
+            const user = await this.prisma.usuario.findUnique({
+                where: {
+                    usuarioId: Number(id),
+                },
+            });
+            if (!user) {
+                throw new HttpException(
+                    {
+                        messageError: 'User not found',
+                    },
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            if (user.profilePicture) {
+                const fileName = user.profilePicture.split('/').pop();
+                const fileToDelete = bucket.file(fileName);
+                await fileToDelete.delete();
+            }
+
+            const fileExtension = file.originalname.split('.').pop();
+            const fileName = `${uuidv4()}.${fileExtension}`;
+            const fileUpload = bucket.file(fileName);
+
+            await fileUpload.save(file.buffer, {
+                metadata: {
+                    contentType: file.mimetype,
+                },
+                public: true,
+                validation: 'md5',
+            });
+
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+            const updatedUser = await this.prisma.usuario.update({
+                where: {
+                    usuarioId: Number(id),
+                },
+                data: {
+                    profilePicture: publicUrl,
+                },
+                select: {
+                    usuarioId: true,
+                    nombre: true,
+                    apellido: true,
+                    email: true,
+                    profilePicture: true,
+                    roles: {
+                        select: {
+                            rol: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    },
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+            return { message: 'Profile picture updated successfully', data: updatedUser };
+        } catch (error) {
+            throw new HttpException(
+                {
+                    messageError: 'Error updating profile picture',
                     error: error.message,
                 },
                 HttpStatus.BAD_REQUEST

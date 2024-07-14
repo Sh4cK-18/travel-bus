@@ -19,6 +19,7 @@ model Usuario {
   apellido    String
   email       String     @unique
   password    String
+  profilePicture String?  @db.LongText
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   roles       UserRol[]
@@ -89,9 +90,16 @@ model Compra {
   userId             Int
   precio             Decimal    @db.Decimal(10, 2)
   qrCode             String?    @db.LongText
+  qrCodeStatus       QrCodeStatus @default(ACTIVE)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   boleto             Boleto     @relation(fields: [boletoId], references: [boletoId], onDelete: Cascade, onUpdate: Cascade)
   usuario            Usuario    @relation(fields: [userId], references: [usuarioId], onDelete: Cascade, onUpdate: Cascade)
+}
+
+enum QrCodeStatus {
+  ACTIVE
+  USED
+  INVALID
 }

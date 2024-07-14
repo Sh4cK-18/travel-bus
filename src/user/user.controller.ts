@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
+import { UpdateProfilePictureDto } from './dto/user-profile.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
@@ -20,4 +22,14 @@ export class UserController {
         return await this.userService.updateUser(id, updateData);
 
     }
+
+    @Post('update-profile-picture/:id')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadProfilePicture(
+        @Param('id') userId: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        return this.userService.updateProfilePicture(userId, file);
+    }
+        
 }
