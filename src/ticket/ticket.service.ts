@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TicketDto } from './dto/ticket-validate.dto';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TicketService {
@@ -18,6 +19,37 @@ export class TicketService {
     cantidad_nino,
     cantidad_tercera_edad,
   }: TicketDto) {
+
+    const ruta = await this.prisma.ruta.findUnique({
+      where: {
+        rutaId: rutaId
+      }
+    });
+
+    if (!ruta) {
+      throw new HttpException(
+        {
+          messageError: 'Route not found',
+        },
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    const totalTicketsRequested = cantidad_adulto + cantidad_nino + cantidad_tercera_edad;
+
+    if(!ruta || ruta.cantidad_boletos < totalTicketsRequested) {
+      throw new HttpException(
+        {
+          messageError: 'There are not enough tickets available',
+        },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const totalPrice = (Number(cantidad_adulto) * Number(ruta.precio_adulto)) +
+        (Number(cantidad_nino) * Number(ruta.precio_nino)) +
+        (Number(cantidad_tercera_edad) * Number(ruta.precio_tercera_edad));
+
     try {
       const ticket = await this.prisma.boleto.create({
         data: {
@@ -25,8 +57,18 @@ export class TicketService {
           cantidad_adulto,
           cantidad_nino,
           cantidad_tercera_edad,
+          proceso_compra: 'reservado',
+          totalPrice: totalPrice
         },
       });
+      await this.prisma.ruta.update({
+        where: {
+          rutaId: rutaId
+        },
+        data: {
+          cantidad_boletos: {decrement: totalTicketsRequested}
+        }
+      }) // Update the route to decrease the number of available tickets
       if (!ticket) {
         throw new HttpException(
           {
@@ -35,10 +77,24 @@ export class TicketService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      return { message: 'Ticket created successfully', ticket };
+      return { message: 'Ticket created successfully', ticket , totalPrice};
     } catch (error) {
       return { message: 'Error creating ticket', error };
     }
+  }
+  @Cron('0 * * * * *')
+  async resetExpiredTickets() {
+    const expirationTime = new Date(Date.now() - 3600000); // 1 hora
+
+    await this.prisma.boleto.deleteMany({
+      where: {
+        proceso_compra: 'reservado',
+        createdAt: {
+          lte: expirationTime
+        },
+      },
+    }) 
+
   }
 
   /**
@@ -56,6 +112,7 @@ export class TicketService {
           HttpStatus.BAD_REQUEST,
         );
       }
+      return { message: 'Tickets found', tickets };
     } catch (error) {
       return { message: 'Error getting tickets', error };
     }
@@ -73,6 +130,7 @@ export class TicketService {
           boletoId: Number(id),
         },
       });
+      
       if (!ticket) {
         throw new HttpException(
           {
@@ -81,6 +139,7 @@ export class TicketService {
           HttpStatus.BAD_REQUEST,
         );
       }
+      return { message: 'Ticket found', ticket };
     } catch (error) {
       return { message: 'Error getting ticket', error };
     }

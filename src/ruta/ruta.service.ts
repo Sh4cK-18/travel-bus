@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RutaValidateDto } from './dto/ruta-validate.dto';
-import { response } from 'express';
+
 
 @Injectable()
 export class RutaService {
@@ -23,6 +23,7 @@ export class RutaService {
     precio_adulto,
     precio_nino,
     precio_tercera_edad,
+    
   }: RutaValidateDto) {
     try {
       const data = await this.prisma.ruta.create({
@@ -116,7 +117,7 @@ export class RutaService {
           HttpStatus.NOT_FOUND,
         );
       }
-      const { cantidad_boletos, ...updateData } = data;
+      const { ...updateData } = data;
       const updatedRoute = await this.prisma.ruta.update({
         where: { rutaId: Number(id) },
         data: { ...updateData },

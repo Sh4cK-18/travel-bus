@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import * as cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,29 @@ async function bootstrap() {
     origin: 'http://localhost:3000',
     credentials: true,
   })
+
+  app.use(helmet({
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'", 
+          "'unsafe-inline'", 
+          "'unsafe-eval'", 
+          "https://*.paypal.com", 
+          "https://*.paypal.cn", 
+          "https://*.paypalobjects.com"
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://www.paypalobjects.com"],
+        connectSrc: ["'self'", "https://api.sandbox.paypal.com"],
+        frameSrc: ["'self'", "https://www.paypal.com"],
+      },
+    },
+  }));
+  
 
 
   app.setGlobalPrefix('api/v1');

@@ -69,6 +69,7 @@ model Boleto {
   cantidad_nino      Int
   cantidad_tercera_edad Int
   proceso_compra     ProcesoCompra?
+  totalPrice        Decimal    @db.Decimal(10, 2)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
@@ -87,6 +88,7 @@ model Compra {
   boletoId           Int
   userId             Int
   precio             Decimal    @db.Decimal(10, 2)
+  qrCode             String?    @db.LongText
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 

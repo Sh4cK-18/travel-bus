@@ -31,7 +31,5 @@ export class RutaValidateDto {
     @IsNotEmpty()
     precio_tercera_edad: number
 
-    @IsInt()
-    @IsNotEmpty()
-    cantidad_boletos: number 
+ 
 }
