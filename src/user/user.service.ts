@@ -15,7 +15,16 @@ export class UserService {
                     apellido: true,
                     email: true,
                     createdAt: true,
-                    updatedAt: true
+                    updatedAt: true,
+                    roles: {
+                        select: {
+                            rol: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    }   
                 }
             })
             if(!data) {
@@ -44,7 +53,16 @@ export class UserService {
                     apellido: true,
                     email: true,
                     createdAt: true,
-                    updatedAt: true
+                    updatedAt: true,
+                    roles: {
+                        select: {
+                            rol: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    }
                 }
             })
             if(!data) {
@@ -100,7 +118,14 @@ export class UserService {
                 data: {
                     ...updateData,
                     roles: {
-                        set: rolesArray,
+                        deleteMany: {},
+                        create: rolesArray.map(role => ({
+                            rol: {
+                                connect: {
+                                    rolId: role.rolId,
+                                },
+                            },
+                        })),
                     },
                 },
                 select: {
