@@ -46,7 +46,6 @@ CREATE TABLE `Ruta` (
     `precio_adulto` DECIMAL(10, 2) NOT NULL,
     `precio_nino` DECIMAL(10, 2) NOT NULL,
     `precio_tercera_edad` DECIMAL(10, 2) NOT NULL,
-    `precio_total` DECIMAL(10, 2) NOT NULL,
     `cantidad_boletos` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -62,6 +61,7 @@ CREATE TABLE `Boleto` (
     `cantidad_nino` INTEGER NOT NULL,
     `cantidad_tercera_edad` INTEGER NOT NULL,
     `proceso_compra` ENUM('comprado', 'libre', 'reservado') NULL,
+    `totalPrice` DECIMAL(10, 2) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
