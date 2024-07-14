@@ -1,4 +1,5 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -79,7 +80,6 @@ export class UserService {
            return {message: 'Error fetching data', error};
         }
     }
-
     async updateUser(id: string, updateData: { nombre?: string; apellido?: string; password?: string; roles?: string[] }) {
         try {
             if (updateData.password) {
