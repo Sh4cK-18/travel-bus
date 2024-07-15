@@ -127,6 +127,13 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 3600000,
+    });
+
     return {
       ...user,
       token,
@@ -180,6 +187,13 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload); 
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 3600000,
+    });
 
     return {
       ...user,

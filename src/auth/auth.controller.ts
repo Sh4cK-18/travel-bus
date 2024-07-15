@@ -40,37 +40,17 @@ export class AuthController {
    @Post('signin')
    @UsePipes(new ValidationPipe())
    async signin(@Body() data: LoginAccessDto, @Res() res: Response) {
-     try {
-       const result = await this.authService.validateUser(data, res);
-       res.cookie('token', result.token, {
-         httpOnly: true,
-         secure: true,
-         sameSite: 'none',
-         maxAge: 3600000,
-       });
- 
-       return res.json(result); 
-     } catch (error) {
-       console.error(error);
-       throw new UnauthorizedException();
-     }
-   }
+    const result = await this.authService.validateUser(data, res);
+    return res.json(result);
+  }
+
 
   @Post('admin-auth')
   @UsePipes(new ValidationPipe())
   async adminAuth(@Body() data: LoginAccessDto, @Res() res: Response) {
-    try {
-      const result = await this.authService.validateAdmin(data, res);
-      res.cookie('token', result.token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        maxAge: 3600000,
-      });
-      return res.json(result);
-    } catch (error) {
-      throw new UnauthorizedException('You are not authorized to access this resource.');
-    }
+    const result = await this.authService.validateAdmin(data, res);
+    return res.json(result);
+  
   }
 
 /**
