@@ -161,6 +161,46 @@ export class UserService {
         }
     }
 
+    async deleteUser(id: string) {
+        try {
+            const user = await this.prisma.usuario.findUnique({
+                where: {
+                    usuarioId: Number(id),
+                },
+            });
+            if (!user) {
+                throw new HttpException(
+                    {
+                        messageError: 'User not found',
+                    },
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            if (user.profilePicture) {
+                const fileName = user.profilePicture.split('/').pop();
+                const fileToDelete = bucket.file(fileName);
+                await fileToDelete.delete();
+            }
+
+            await this.prisma.usuario.delete({
+                where: {
+                    usuarioId: Number(id),
+                },
+            });
+
+            return { message: 'User deleted successfully' };
+        } catch (error) {
+            throw new HttpException(
+                {
+                    messageError: 'Error deleting user',
+                    error: error.message,
+                },
+                HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
     async updateProfilePicture(id: string, file: Express.Multer.File) {
         try {
             const user = await this.prisma.usuario.findUnique({
