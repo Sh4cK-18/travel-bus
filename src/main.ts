@@ -9,7 +9,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: 'https://web-travel-bus-git-main-ramsezgms-projects.vercel.app',
+    origin: 'https://web-travel-bus-git-main-ramsezgms-projects.vercel.app/',
     credentials: true,
   })
 
