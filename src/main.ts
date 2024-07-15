@@ -9,11 +9,11 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: 'https://web-travel-bus-git-main-ramsezgms-projects.vercel.app',
     credentials: true,
   })
 
-  app.use(helmet({
+/*   app.use(helmet({
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: {
       directives: {
@@ -33,7 +33,7 @@ async function bootstrap() {
         frameSrc: ["'self'", "https://www.paypal.com"],
       },
     },
-  }));
+  })); */
   
 
 
