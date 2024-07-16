@@ -32,4 +32,9 @@ export class TicketController {
     async deleteTicket(@Param('id') id: string) {
         return this.ticketService.deleteTicket(id);
     }
+
+    @Get('get-tickets-by-user/:userId')
+    async getTicketsByUser(@Param('userId') userId: string) {
+        return this.ticketService.getTicketsByUser(userId);
+    }
 }

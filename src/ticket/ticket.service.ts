@@ -201,4 +201,34 @@ export class TicketService {
       return { message: 'Error deleting ticket', error };
     }
   }
+
+  //Get tickets from a specific user using the user ID
+  async getTicketsByUserId(userId: number) {
+    try {
+      const tickets = await this.prisma.boleto.findMany({
+        where: {
+          compras: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        include: {
+          ruta: true,
+          compras: {
+            where: {
+              userId: userId,
+            },
+            include: {
+              usuario: true,
+            },
+          },
+        },
+      });
+
+      return tickets;
+    } catch (error) {
+      throw new Error(`Error fetching tickets for user with ID ${userId}: ${error.message}`);
+    }
+  }
 }
