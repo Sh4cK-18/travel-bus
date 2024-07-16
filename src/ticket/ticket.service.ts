@@ -213,20 +213,34 @@ export class TicketService {
             },
           },
         },
-        include: {
-          ruta: true,
+        select: {
+          totalPrice: true,
+          ruta: {
+            select: {
+              fecha_hora: true,
+              salida: true,
+              llegada: true,
+            },
+          },
           compras: {
             where: {
               userId: userId,
             },
-            include: {
-              usuario: true,
+            select: {
+              qrCode: true,
             },
           },
         },
       });
 
-      return tickets;
+      // Transform the data to include only the necessary fields in the desired format
+      return tickets.map(ticket => ({
+        totalPrice: ticket.totalPrice,
+        fecha_hora: ticket.ruta.fecha_hora,
+        salida: ticket.ruta.salida,
+        llegada: ticket.ruta.llegada,
+        qrCode: ticket.compras[0].qrCode, // Assuming each ticket has only one purchase per user
+      }));
     } catch (error) {
       throw new Error(`Error fetching tickets for user with ID ${userId}: ${error.message}`);
     }

@@ -34,7 +34,7 @@ export class TicketController {
     }
 
     @Get('get-tickets-by-user/:userId')
-    async getTicketsByUser(@Param('userId') userId: string) {
-        return this.ticketService.getTicketsByUser(userId);
+    async getTicketsByUserId(@Param('userId', ParseIntPipe) userId: number) {
+        return this.ticketService.getTicketsByUserId(userId);
     }
 }
