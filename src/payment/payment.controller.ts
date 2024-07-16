@@ -18,15 +18,7 @@ export class PaymentController {
     }
   }
   
-  @Post('success')
-  async handlePaymentSuccess(@Body() { paymentIntentId, compraId }: { paymentIntentId: string, compraId: number }) {
-    try {
-      const response = await this.paymentService.handlePaymentSuccess(paymentIntentId, compraId);
-      return response;
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+
 
   @Post('validate-qr')
   async validateQR(@Body() body: { qrCode: string }) {
