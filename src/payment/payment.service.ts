@@ -14,6 +14,7 @@ export class PaymentService {
         });
     }
 
+    
     async processPayment(createPaymentDTO: CreatePaymentDTO) {
         const { boletoId, userId } = createPaymentDTO;
 
@@ -48,7 +49,7 @@ export class PaymentService {
                 compraId: compra.compraId,
             };
         } catch (error) {
-            console.error('Error creating payment:', error);
+            console.error('Error creating payment:', error.message, error.stack);
             throw new HttpException(`Error creating payment: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -81,7 +82,7 @@ export class PaymentService {
                 throw new Error('Payment not completed');
             }
         } catch (error) {
-            console.error('Error handling payment success:', error);
+            console.error('Error handling payment success:', error.message, error.stack);
             throw new HttpException(`Error handling payment success: ${error.message}`, HttpStatus.BAD_REQUEST);
         }
     }
@@ -109,7 +110,7 @@ export class PaymentService {
 
             return { message: 'QR Code validated successfully and now marked as used' };
         } catch (error) {
-            console.error('Error validating QR code:', error);
+            console.error('Error validating QR code:', error.message, error.stack);
             throw new HttpException(`Error validating QR code: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
