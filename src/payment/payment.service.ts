@@ -18,6 +18,11 @@ export class PaymentService {
         const { boletoId, userId } = createPaymentDTO;
 
         try {
+            // Verifica que boletoId y userId no sean null o undefined
+            if (!boletoId || !userId) {
+                throw new HttpException('Invalid boletoId or userId', HttpStatus.BAD_REQUEST);
+            }
+
             const boleto = await this.prisma.boleto.findUnique({
                 where: { boletoId }
             });
