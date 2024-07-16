@@ -27,6 +27,9 @@ export class PaymentService {
             }
 
             const precio: number = Number(boleto.totalPrice);
+            if (isNaN(precio)) {
+                throw new HttpException('Invalid ticket price', HttpStatus.BAD_REQUEST);
+            }
 
             const paymentIntent = await this.stripe.paymentIntents.create({
                 amount: precio * 100, // Stripe trabaja en centavos
