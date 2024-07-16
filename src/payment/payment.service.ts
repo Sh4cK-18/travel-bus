@@ -7,6 +7,7 @@ import * as QRCode from 'qrcode';
 @Injectable()
 export class PaymentService {
     private stripe: Stripe;
+
     constructor(private prisma: PrismaService) {
         this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
             apiVersion: '2024-06-20',
@@ -16,22 +17,21 @@ export class PaymentService {
     async processPayment(createPaymentDTO: CreatePaymentDTO) {
         const { boletoId, userId } = createPaymentDTO;
 
-        const boleto = await this.prisma.boleto.findUnique({
-            where: { boletoId }
-        });
-
-        if (!boleto) {
-            throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
-        }
-
-        const precio: number = Number(boleto.totalPrice);
-
         try {
+            const boleto = await this.prisma.boleto.findUnique({
+                where: { boletoId }
+            });
+
+            if (!boleto) {
+                throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
+            }
+
+            const precio: number = Number(boleto.totalPrice);
+
             const paymentIntent = await this.stripe.paymentIntents.create({
                 amount: precio * 100, // Stripe trabaja en centavos
                 currency: 'usd',
                 payment_method_types: ['card'],
-                capture_method: 'automatic', // Captura automática al confirmar el pago
                 metadata: { boletoId: boletoId.toString(), userId: userId.toString() },
             });
 
@@ -48,7 +48,8 @@ export class PaymentService {
                 compraId: compra.compraId,
             };
         } catch (error) {
-            throw new HttpException('Error creating payment', HttpStatus.INTERNAL_SERVER_ERROR);
+            console.error('Error creating payment:', error);
+            throw new HttpException(`Error creating payment: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -81,30 +82,35 @@ export class PaymentService {
             }
         } catch (error) {
             console.error('Error handling payment success:', error);
-            throw new HttpException('Error handling payment success', HttpStatus.BAD_REQUEST);
+            throw new HttpException(`Error handling payment success: ${error.message}`, HttpStatus.BAD_REQUEST);
         }
     }
 
     async validateQR(qrCode: string) {
-        const compra = await this.prisma.compra.findFirst({
-            where: {
-                qrCode: qrCode, qrCodeStatus: 'ACTIVE'
-            }
-        });
+        try {
+            const compra = await this.prisma.compra.findFirst({
+                where: {
+                    qrCode: qrCode, qrCodeStatus: 'ACTIVE'
+                }
+            });
 
-        if (!compra) {
-            throw new HttpException('QR Code not found', HttpStatus.NOT_FOUND);
+            if (!compra) {
+                throw new HttpException('QR Code not found', HttpStatus.NOT_FOUND);
+            }
+
+            await this.prisma.compra.update({
+                where: {
+                    compraId: compra.compraId
+                },
+                data: {
+                    qrCodeStatus: 'USED'
+                }
+            });
+
+            return { message: 'QR Code validated successfully and now marked as used' };
+        } catch (error) {
+            console.error('Error validating QR code:', error);
+            throw new HttpException(`Error validating QR code: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        await this.prisma.compra.update({
-            where: {
-                compraId: compra.compraId
-            },
-            data: {
-                qrCodeStatus: 'USED'
-            }
-        });
-
-        return { message: 'QR Code validated successfully and now marked as used' };
     }
 }
