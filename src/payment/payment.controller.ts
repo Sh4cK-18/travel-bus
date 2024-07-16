@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDTO } from './dto/payment-valid.dto';
 
@@ -8,14 +8,24 @@ export class PaymentController {
               
     ) {}
 
-    @Post('create')
-    async createPayment(@Body() createPaymentDto: CreatePaymentDTO) {
-      return this.paymentService.createPayment(createPaymentDto);
+    @Post('process')
+  async processPayment(@Body() createPaymentDTO: CreatePaymentDTO) {
+    try {
+      const response = await this.paymentService.processPayment(createPaymentDTO);
+      return response;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
   
-    @Post('capture')
-  async capturePayment(@Body('orderId') orderId: string, @Body('compraId') compraId: number) {
-    return this.paymentService.capturePayment(orderId, compraId);
+  @Post('success')
+  async handlePaymentSuccess(@Body() { paymentIntentId, compraId }: { paymentIntentId: string, compraId: number }) {
+    try {
+      const response = await this.paymentService.handlePaymentSuccess(paymentIntentId, compraId);
+      return response;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Post('validate-qr')

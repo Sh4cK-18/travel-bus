@@ -1,81 +1,64 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePaymentDTO } from './dto/payment-valid.dto';
-import * as paypal from '@paypal/checkout-server-sdk';
+import Stripe from 'stripe';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class PaymentService {
-    constructor(private prisma: PrismaService) {}
+    private stripe: Stripe;
+    constructor(private prisma: PrismaService) {
+        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+            apiVersion: '2024-06-20',
+        });
+    }
 
-    async createPayment(CreatePaymentDTO: CreatePaymentDTO) {
-        const {boletoId, userId} = CreatePaymentDTO;
+    async processPayment(createPaymentDTO: CreatePaymentDTO) {
+        const { boletoId, userId } = createPaymentDTO;
 
         const boleto = await this.prisma.boleto.findUnique({
-            where: {boletoId}
+            where: { boletoId }
         });
 
         if (!boleto) {
-            throw new HttpException(
-              {
-                messageError: 'Ticket not found',
-              },
-              HttpStatus.NOT_FOUND
-            );
-          }
+            throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
+        }
 
-          const precio = boleto.totalPrice;
+        const precio: number = Number(boleto.totalPrice);
 
-        const enviroment = new paypal.core.SandboxEnvironment(
-            process.env.PAYPAL_CLIENT_ID,
-            process.env.PAYPAL_CLIENT_SECRET
-        );
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount: precio * 100, // Stripe trabaja en centavos
+                currency: 'usd',
+                payment_method_types: ['card'],
+                capture_method: 'automatic', // Captura automática al confirmar el pago
+                metadata: { boletoId: boletoId.toString(), userId: userId.toString() },
+            });
 
-        const client = new paypal.core.PayPalHttpClient(enviroment);
-
-        const request = new paypal.orders.OrdersCreateRequest();
-        request.prefer("return=representation");
-        request.requestBody({
-            intent: 'CAPTURE',
-            purchase_units: [{
-                amount: {
-                    currency_code: 'USD',
-                    value: precio.toString()
+            const compra = await this.prisma.compra.create({
+                data: {
+                    boletoId,
+                    userId,
+                    precio,
                 }
-            }]
-        });
+            });
 
-        const response = await client.execute(request);
-
-        const compra = await this.prisma.compra.create({
-            data: {
-                boletoId,
-                userId,
-                precio,
-            }
-        });
-        
-        return {
-            ...response.result,
-            compraId: compra.compraId
+            return {
+                clientSecret: paymentIntent.client_secret,
+                compraId: compra.compraId,
+            };
+        } catch (error) {
+            throw new HttpException('Error creating payment', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    async capturePayment(orderId: string, compraId: number) {
+    async handlePaymentSuccess(paymentIntentId: string, compraId: number) {
         try {
-            const environment = new paypal.core.SandboxEnvironment(
-                process.env.PAYPAL_CLIENT_ID,
-                process.env.PAYPAL_CLIENT_SECRET
-            );
-            const client = new paypal.core.PayPalHttpClient(environment);
-        
-            const request = new paypal.orders.OrdersCaptureRequest(orderId);
-            request.requestBody({});
-            const response = await client.execute(request);
-        
-            if (response.result.status === 'COMPLETED') {
+            const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+            if (paymentIntent.status === 'succeeded') {
                 const qrCodeUrl = await QRCode.toDataURL(`Compra ID: ${compraId}`);
-        
+
                 await this.prisma.compra.update({
                     where: { compraId },
                     data: {
@@ -88,7 +71,7 @@ export class PaymentService {
                         qrCodeStatus: 'ACTIVE',
                     },
                 });
-        
+
                 return {
                     message: 'Payment completed successfully',
                     qrCodeUrl,
@@ -97,12 +80,12 @@ export class PaymentService {
                 throw new Error('Payment not completed');
             }
         } catch (error) {
-            console.error('Error capturing payment:', error);
-            throw new HttpException('Error capturing payment', HttpStatus.BAD_REQUEST);
+            console.error('Error handling payment success:', error);
+            throw new HttpException('Error handling payment success', HttpStatus.BAD_REQUEST);
         }
     }
 
-    async validateQR (qrCode: string) {
+    async validateQR(qrCode: string) {
         const compra = await this.prisma.compra.findFirst({
             where: {
                 qrCode: qrCode, qrCodeStatus: 'ACTIVE'
@@ -110,25 +93,18 @@ export class PaymentService {
         });
 
         if (!compra) {
-            throw new HttpException(
-              {
-                messageError: 'QR Code not found',
-              },
-              HttpStatus.NOT_FOUND
-            );
-          }
+            throw new HttpException('QR Code not found', HttpStatus.NOT_FOUND);
+        }
 
-          await this.prisma.compra.update({
-                where: {
-                    compraId: compra.compraId
-                },
-                data: {
-                    qrCodeStatus: 'USED'
-                }
-          });
+        await this.prisma.compra.update({
+            where: {
+                compraId: compra.compraId
+            },
+            data: {
+                qrCodeStatus: 'USED'
+            }
+        });
 
-          return {message: 'QR Code validated successfully and now marked as used'};
+        return { message: 'QR Code validated successfully and now marked as used' };
     }
-    
-    
 }
