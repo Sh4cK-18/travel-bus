@@ -166,6 +166,8 @@ export class RutaService {
           rutaId: true,
           puerta: true,
           fecha_hora: true,
+          salida: true,
+          llegada: true,
         }
       });
       if (!data || data.length === 0) {
