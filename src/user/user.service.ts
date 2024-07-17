@@ -176,19 +176,25 @@ export class UserService {
                     HttpStatus.NOT_FOUND
                 );
             }
-
+    
             if (user.profilePicture) {
                 const fileName = user.profilePicture.split('/').pop();
                 const fileToDelete = bucket.file(fileName);
-                await fileToDelete.delete();
+    
+                try {
+                    await fileToDelete.delete();
+                } catch (fileError) {
+                    console.error(`Error deleting file: ${fileError.message}`);
+                    // No se lanza una excepción aquí para asegurar que el usuario se elimine
+                }
             }
-
+    
             await this.prisma.usuario.delete({
                 where: {
                     usuarioId: Number(id),
                 },
             });
-
+    
             return { message: 'User deleted successfully' };
         } catch (error) {
             throw new HttpException(
@@ -199,7 +205,7 @@ export class UserService {
                 HttpStatus.BAD_REQUEST
             );
         }
-    }
+    }    
 
     async updateProfilePicture(id: string, file: Express.Multer.File) {
         try {
